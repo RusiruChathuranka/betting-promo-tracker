@@ -27,9 +27,10 @@ def firecrawl(url):
         json={
             "url": url,
             "formats": ["markdown", "links"],
-            "onlyMainContent": True,
+            "onlyMainContent": False,
+            "waitFor": 2500,
         },
-        timeout=90,
+        timeout=120,
     )
     r.raise_for_status()
     data = r.json().get("data", {})
@@ -148,11 +149,39 @@ def parse_sections(markdown):
         candidates = []
         raw = [norm(x) for x in lines if norm(x)]
         for i, line in enumerate(raw):
-            if re.search(r"bonus|cashback|free bet|freebet|promotion|offer|reward|deposit", line, re.I):
-                body = " ".join(raw[i:i + 8])
-                candidates.append((line[:180], body[:2500]))
+            if not re.search(
+                r"bonus|cashback|free bet|freebet|promotion|offer|reward|deposit|welcome|reload",
+                line, re.I
+            ):
+                continue
+
+            title = re.sub(r"^[•*\\-]+\\s*", "", line).strip()
+            if len(title) < 4 or len(title) > 180:
+                continue
+
+            low = title.lower()
+            if low.startswith((
+                "the bonus", "this bonus", "bonus will", "bonus must",
+                "promotion is", "this promotion", "users must",
+                "players must", "wagering requirement"
+            )):
+                continue
+
+            body = " ".join(raw[i:i + 18])
+            candidates.append((title[:180], body[:3500]))
+
         if candidates:
             sections.extend(candidates)
+
+    # Last-resort page-level extraction. This prevents a successful scrape
+    # from becoming zero offers simply because the site has no headings.
+    if not sections and markdown and re.search(
+        r"bonus|cashback|free bet|freebet|promotion|offer|deposit|reward|welcome|reload",
+        markdown, re.I
+    ):
+        raw = [norm(x) for x in lines if norm(x)]
+        if raw:
+            sections.append((raw[0][:180], " ".join(raw[:35])[:5000]))
 
     # Remove obvious navigation/footer noise and duplicate candidates.
     out = []
@@ -284,7 +313,7 @@ def discovered_links(source_url, links):
         out.append(link)
 
     # Preserve order and cap crawling so one source cannot explode the run.
-    return list(dict.fromkeys(out))[:12]
+    return list(dict.fromkeys(out))[:20]
 
 def main():
     cfg = json.loads((ROOT / "config/platforms.json").read_text())

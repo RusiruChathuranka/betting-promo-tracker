@@ -5,7 +5,10 @@
       "slug": "lsbet",
       "urls": [
         "https://www.ls.bet/promotions",
-        "https://www.ls.bet/ta/promotions"
+        "https://www.ls.bet/promotions/cashback-reward",
+        "https://www.ls.bet/ta/promotions/sportsbookdeposit-bonus",
+        "https://www.ls.bet/ta/promotions/registrationbonus-sports",
+        "https://www.ls.bet/promotions/tuesday-bonus"
       ]
     },
     {
@@ -19,8 +22,9 @@
       "name": "BETSS",
       "slug": "betss",
       "urls": [
-        "https://betss.com/",
-        "https://learn.betss.com/tag/promotions"
+        "https://betss.com/promotions",
+        "https://learn.betss.com/tag/promotions",
+        "https://learn.betss.com/post/how-to-claim-your-bonus-on-betss"
       ]
     },
     {
@@ -28,7 +32,8 @@
       "slug": "1xbet",
       "urls": [
         "https://lk.1xbet.com/en/bonus/rules",
-        "https://lk.1xbet.com/en/blog/1xbet-bonus-how-use-it-complete-guide-activation-and-wagering-2026"
+        "https://lk.1xbet.com/en/blog/1xbet-bonus-how-use-it-complete-guide-activation-and-wagering-2026",
+        "https://lk.1xbet.com/en/blog/1xbet-promo-code-how-to-get-find-use"
       ]
     },
     {
@@ -56,6 +61,7 @@
       "name": "BetWinner",
       "slug": "betwinner",
       "urls": [
+        "https://betwinner.com/en/bonus/rules",
         "https://betwinner.com/en/bonus/rules/1st",
         "https://betwinner.com/en/bonus/rules/replenishment_every_thursday"
       ]
@@ -71,7 +77,8 @@
       "name": "Megapari",
       "slug": "megapari",
       "urls": [
-        "https://megapari.games/sri-lanka/bonus/"
+        "https://megapari.games/sri-lanka/bonus/",
+        "https://megapari.games/sri-lanka/registration/"
       ]
     },
     {

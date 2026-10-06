@@ -1,21 +1,22 @@
 {
   "weights": {
-    "bonus_percent": 0.20,
+    "bonus_percent": 0.2,
     "max_bonus": 0.25,
-    "low_wagering": 0.20,
-    "low_min_deposit": 0.10,
-    "low_min_odds": 0.10,
+    "low_wagering": 0.2,
+    "low_min_deposit": 0.1,
+    "low_min_odds": 0.1,
     "long_validity": 0.05,
-    "cash_conversion": 0.10
+    "cash_conversion": 0.1
   },
   "category_priority": {
-    "new_customer": 1.0,
-    "deposit_bonus": 1.0,
+    "new_customer": 1,
+    "deposit_bonus": 1,
     "cashback": 0.9,
     "sports_bonus": 0.9,
     "racing_bonus": 0.9,
     "free_bet": 0.8,
     "reload_bonus": 0.8,
     "other": 0.5
-  }
+  },
+  "quality_filter": "validated_promotion_only"
 }

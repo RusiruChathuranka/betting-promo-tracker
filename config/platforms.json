@@ -1,0 +1,32 @@
+{
+  "platforms": [
+    {
+      "name": "LS.BET",
+      "slug": "lsbet",
+      "urls": [
+        "https://www.ls.bet/ta/promotions"
+      ]
+    },
+    {
+      "name": "Betway",
+      "slug": "betway",
+      "urls": [
+        "https://www.betway.com/lk/promotions"
+      ]
+    },
+    {
+      "name": "BETSS",
+      "slug": "betss",
+      "urls": [
+        "https://betss.com/promotions"
+      ]
+    },
+    {
+      "name": "1xBet",
+      "slug": "1xbet",
+      "urls": [
+        "https://1xbet.com/en/promo"
+      ]
+    }
+  ]
+}

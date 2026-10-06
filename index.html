@@ -1,9 +1,85 @@
 <!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Sri Lanka Betting Promotion Tracker</title><link rel="stylesheet" href="styles.css"></head>
-<body><header><div><span class="eyebrow">COMPETITIVE INTELLIGENCE</span><h1>Sri Lanka Betting Promotion Tracker</h1><p>Compare public promotions, identify similar offers, spot the strongest competitor offer and generate a BETSS counter-promo recommendation for each cluster.</p></div><div class="updated" id="updated">Loading…</div></header>
-<main><section class="stats"><div><b id="platforms">0</b><span>Platforms</span></div><div><b id="offers">0</b><span>Live offers</span></div><div><b id="clusters">0</b><span>Offer clusters</span></div><div><b id="errors">0</b><span>Source errors</span></div></section>
-<section class="toolbar"><input id="search" placeholder="Search promotions, platforms or sports…"><select id="category"><option value="">All categories</option></select><select id="platform"><option value="">All platforms</option></select></section>
-<section><div class="section-head"><h2>Best offer + counter-promo by cluster</h2><span>Counter-promo is a planning suggestion based on the strongest non-BETSS offer in each cluster.</span></div><div id="winners" class="cards"></div></section>
-<section><div class="section-head"><h2>All promotions</h2><span id="count"></span></div><div class="table-wrap"><table><thead><tr><th>Platform</th><th>Promotion</th><th>Customer</th><th>Cluster</th><th>Bonus</th><th>Max</th><th>Wagering</th><th>Min Deposit</th><th>Score</th><th></th></tr></thead><tbody id="rows"></tbody></table></div></section>
-</main><script src="app.js"></script></body></html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>BETSS Competitive Promo Intelligence</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<header class="hero">
+  <div class="hero-inner">
+    <div class="brand-row">
+      <span class="brand">PROMO INTEL</span>
+      <span class="live-dot">LIVE MARKET VIEW</span>
+      <span class="updated">Updated <b id="updated">Loading…</b></span>
+    </div>
+    <div class="hero-grid">
+      <div>
+        <span class="eyebrow">SRI LANKA · BETTING COMPETITIVE INTELLIGENCE</span>
+        <h1>See the market.<br><span>Beat the offer.</span></h1>
+        <p>Track public promotions across betting platforms, compare genuinely comparable offers, and turn competitor gaps into BETSS counter-promo ideas.</p>
+        <div class="hero-actions">
+          <a href="#clusters">Explore clusters ↓</a>
+          <a class="ghost" href="#offers-table">View all offers</a>
+        </div>
+      </div>
+      <div class="hero-panel">
+        <div class="hero-panel-top"><span>MARKET SNAPSHOT</span><b id="sourceCount">Scanning…</b></div>
+        <div class="hero-big"><strong id="offers">0</strong><span>validated live offers</span></div>
+        <div class="hero-bars"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+        <small id="qualityNote">Quality checks running…</small>
+      </div>
+    </div>
+  </div>
+</header>
+
+<main>
+  <section class="stats">
+    <article><span class="stat-icon">◈</span><div><b id="platforms">0</b><span>Platforms</span></div></article>
+    <article><span class="stat-icon">✦</span><div><b id="clustersCount">0</b><span>Comparable clusters</span></div></article>
+    <article><span class="stat-icon">★</span><div><b id="bestScore">0</b><span>Best market score</span></div></article>
+    <article><span class="stat-icon">!</span><div><b id="errors">0</b><span>Source issues</span></div></article>
+    <article class="muted-stat"><span class="stat-icon">✓</span><div><b id="rejected">0</b><span>Pages excluded</span></div></article>
+  </section>
+
+  <section class="insights" id="insights"></section>
+
+  <section class="controls">
+    <div class="controls-title"><span class="eyebrow dark">MARKET FILTERS</span><b>Find the offer you care about</b></div>
+    <div class="toolbar">
+      <div class="search"><span>⌕</span><input id="search" placeholder="Search platform, promotion, sport…"></div>
+      <select id="category"><option value="">All categories</option></select>
+      <select id="platform"><option value="">All platforms</option></select>
+    </div>
+  </section>
+
+  <section id="clusters">
+    <div class="section-head">
+      <div><span class="eyebrow dark">COMPETITIVE LANDSCAPE</span><h2>Best offer by comparable cluster</h2></div>
+      <span id="clusterCount"></span>
+    </div>
+    <div id="winners" class="cluster-grid"></div>
+  </section>
+
+  <section id="offers-table">
+    <div class="section-head">
+      <div><span class="eyebrow dark">OFFER LIBRARY</span><h2>All validated promotions</h2></div>
+      <span id="count"></span>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Platform</th><th>Promotion</th><th>Customer</th><th>Cluster</th><th>Bonus</th><th>Max</th><th>Wagering</th><th>Min deposit</th><th>Score</th><th></th></tr></thead>
+        <tbody id="rows"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <footer>
+    <div><b>Promo Intel</b><span>Public-source competitive monitoring for planning.</span></div>
+    <span>Automated data can change. Always verify live terms before launch.</span>
+  </footer>
+</main>
+<script src="app.js"></script>
+</body>
+</html>

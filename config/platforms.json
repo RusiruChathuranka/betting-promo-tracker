@@ -87,6 +87,28 @@
       "urls": [
         "https://guidebook.melbet.com/bonus/melbet-first-deposit-bonus/"
       ]
+    },
+    {
+      "name": "GameBull",
+      "slug": "gamebull",
+      "urls": [
+        "https://gamebull.lk/"
+      ]
+    },
+    {
+      "name": "STBetPlus",
+      "slug": "stbetplus",
+      "urls": [
+        "https://stbetplus.net/"
+      ]
+    },
+    {
+      "name": "SLGame",
+      "slug": "slgame",
+      "urls": [
+        "https://slgame.bet/",
+        "https://slgame.bet/cashback"
+      ]
     }
   ]
 }

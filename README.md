@@ -5,7 +5,9 @@ Competitive promotion intelligence dashboard for betting platforms serving Sri L
 ## What it does
 - Scrapes public promotion pages on a scheduled GitHub Actions run.
 - Extracts and normalizes offer mechanics such as bonus %, max bonus, minimum deposit, wagering, odds and validity.
-- Clusters similar promotions.
+- Discovers promotion/bonus detail links from configured public pages.
+- Clusters similar promotions by promotion type, customer segment and sport.
+- Includes multiple Sri Lanka-facing competitors and can be extended by editing `config/platforms.json`.
 - Scores offers within each cluster and highlights the strongest comparable offer.
 - Keeps historical snapshots so promotion changes can be detected.
 - Publishes a static GitHub Pages dashboard.
@@ -20,7 +22,7 @@ The scraper uses public promotion pages only. Review each source's terms/robots 
 ## Data
 - `data/promotions.json` — latest normalized offers
 - `data/history.json` — historical snapshots
-- `config/platforms.json` — source pages
+- `config/platforms.json` — source pages and competitor entry points
 - `config/scoring.json` — ranking weights
 
 ## Local test

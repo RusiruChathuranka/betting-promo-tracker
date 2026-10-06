@@ -1,5 +1,31 @@
 {
-  "updated_at": null,
-  "promotions": [],
-  "errors": []
+  "updated_at": "2026-10-06T08:36:12.980212+00:00",
+  "promotions": [
+    {
+      "id": "f1749e9b4e26",
+      "platform": "BETSS",
+      "title": "Online Betting Promotions",
+      "category": "other",
+      "sport": "Racing",
+      "bonus_percent": null,
+      "max_bonus_lkr": null,
+      "min_deposit_lkr": null,
+      "wagering_x": null,
+      "min_odds": null,
+      "validity_days": null,
+      "source_url": "https://betss.com/promotions",
+      "source_text": "![icon](https://betss.com/assets/shared/images/logo_c.svg) Theres more to love in the app OPEN Home In Play Sports Games Racing Menu",
+      "last_checked": "2026-10-06T08:36:12.980212+00:00",
+      "score": 0,
+      "cluster_key": "other|Racing",
+      "cluster_label": "Other \u00b7 Racing"
+    }
+  ],
+  "errors": [
+    {
+      "platform": "LS.BET",
+      "url": "https://www.ls.bet/ta/promotions",
+      "error": "500 Server Error: Internal Server Error for url: https://api.firecrawl.dev/v2/scrape"
+    }
+  ]
 }

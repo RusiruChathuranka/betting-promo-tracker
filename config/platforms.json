@@ -4,6 +4,7 @@
       "name": "LS.BET",
       "slug": "lsbet",
       "urls": [
+        "https://www.ls.bet/promotions",
         "https://www.ls.bet/ta/promotions"
       ]
     },
@@ -11,21 +12,73 @@
       "name": "Betway",
       "slug": "betway",
       "urls": [
-        "https://www.betway.com/lk/promotions"
+        "https://betway.com/en-lk/"
       ]
     },
     {
       "name": "BETSS",
       "slug": "betss",
       "urls": [
-        "https://betss.com/promotions"
+        "https://betss.com/",
+        "https://learn.betss.com/tag/promotions"
       ]
     },
     {
       "name": "1xBet",
       "slug": "1xbet",
       "urls": [
-        "https://1xbet.com/en/promo"
+        "https://lk.1xbet.com/en/bonus/rules",
+        "https://lk.1xbet.com/en/blog/1xbet-bonus-how-use-it-complete-guide-activation-and-wagering-2026"
+      ]
+    },
+    {
+      "name": "Sportway",
+      "slug": "sportway",
+      "urls": [
+        "https://sportway.lk/info/promo"
+      ]
+    },
+    {
+      "name": "DBbet",
+      "slug": "dbbet",
+      "urls": [
+        "https://dbbetsrilanka.com/"
+      ]
+    },
+    {
+      "name": "Win.Bet",
+      "slug": "winbet",
+      "urls": [
+        "https://win.bet/en-lk"
+      ]
+    },
+    {
+      "name": "BetWinner",
+      "slug": "betwinner",
+      "urls": [
+        "https://betwinner.com/en/bonus/rules/1st",
+        "https://betwinner.com/en/bonus/rules/replenishment_every_thursday"
+      ]
+    },
+    {
+      "name": "888Starz",
+      "slug": "888starz",
+      "urls": [
+        "https://888starz.lk/bonus/"
+      ]
+    },
+    {
+      "name": "Megapari",
+      "slug": "megapari",
+      "urls": [
+        "https://megapari.games/sri-lanka/bonus/"
+      ]
+    },
+    {
+      "name": "MelBet",
+      "slug": "melbet",
+      "urls": [
+        "https://guidebook.melbet.com/bonus/melbet-first-deposit-bonus/"
       ]
     }
   ]

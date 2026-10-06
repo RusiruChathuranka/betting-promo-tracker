@@ -8,11 +8,41 @@ from bs4 import BeautifulSoup
 
 ROOT = Path(__file__).resolve().parents[1]
 API = "https://api.firecrawl.dev/v2/scrape"
+MAX_PAGES_PER_PLATFORM = 12
 
 PROMO_LINK_WORDS = (
     "promo", "promotion", "promotions", "bonus", "bonuses", "cashback",
     "free-bet", "freebet", "reward", "rewards", "welcome", "reload"
 )
+
+PROMO_TITLE_WORDS = (
+    "bonus", "bonuses", "cashback", "cash back", "cash-back",
+    "free bet", "freebet", "free-bet", "promotion", "promotions",
+    "promo", "reward", "rewards", "welcome", "reload",
+    "special offer", "daily bonus", "weekly bonus", "deposit bonus",
+    "first deposit", "registration bonus", "tuesday bonus", "friday bonus"
+)
+
+GENERIC_TITLES = {
+    "promotion", "promotions", "promo", "promos", "bonus", "bonuses",
+    "deposit", "withdrawal", "sportsbook", "casino", "live casino",
+    "racing", "sports", "games", "offers", "offer", "terms and conditions",
+    "terms", "rules", "faq", "help", "responsible gaming", "about us",
+    "contact us", "login", "register", "registration", "home"
+}
+
+NON_PROMO_PATTERNS = (
+    r"\bterms?\b", r"\bprivacy\b", r"\brules?\b", r"\bfaq\b",
+    r"\bhow to\b", r"\bguide\b", r"\bblog\b", r"\bcontact\b",
+    r"\babout us\b", r"\bresponsible\b", r"\blogin\b", r"\bregister\b"
+)
+
+NON_OFFICIAL_HOSTS = {
+    "dbbetsrilanka.com": "guide/affiliate",
+    "888starz.lk": "guide/affiliate",
+    "megapari.games": "guide/affiliate",
+    "guidebook.melbet.com": "guide/affiliate",
+}
 
 def firecrawl(url):
     key = os.environ.get("FIRECRAWL_API_KEY")
@@ -29,23 +59,22 @@ def firecrawl(url):
             "url": url,
             "formats": ["markdown", "links"],
             "onlyMainContent": False,
-            "waitFor": 2500,
+            "waitFor": 2000,
         },
-        timeout=120,
+        timeout=90,
     )
     r.raise_for_status()
     data = r.json().get("data", {})
-    return data.get("markdown", "") or "", data.get("links", []) or []
+    return data.get("markdown", "") or "", data.get("links", []) or ""
 
 def direct_fallback(url):
-    """Fetch a public page directly when Firecrawl is unavailable/rate-limited."""
     r = requests.get(
         url,
         headers={
             "User-Agent": "Mozilla/5.0 (compatible; PromotionTracker/1.0)",
             "Accept": "text/html,application/xhtml+xml",
         },
-        timeout=45,
+        timeout=35,
     )
     r.raise_for_status()
 
@@ -91,11 +120,51 @@ def num(text, patterns):
                 pass
     return None
 
-def classify(title, body):
-    t = norm(f"{title} {body}").lower()
+def has_promo_title(title):
     h = norm(title).lower()
+    if not h or h in GENERIC_TITLES:
+        return False
+    return any(word in h for word in PROMO_TITLE_WORDS)
 
-    # Title is deliberately weighted more heavily than body text.
+def promotion_evidence(title, body):
+    h = norm(title).lower()
+    t = norm(f"{title} {body}").lower()
+
+    if h in GENERIC_TITLES:
+        return False, "generic page title"
+
+    if any(re.search(p, h) for p in NON_PROMO_PATTERNS) and not has_promo_title(h):
+        return False, "non-promotion page title"
+
+    title_signal = has_promo_title(h)
+    mechanics = 0
+    if re.search(r"\b\d{1,3}\s*%\b", t):
+        mechanics += 1
+    if re.search(r"\b(?:lkr|rs\.?)\s*[\d,]+\b", t):
+        mechanics += 1
+    if re.search(r"\b(?:up to|max(?:imum)?)\b", t):
+        mechanics += 1
+    if re.search(r"\b\d+(?:\.\d+)?\s*x\b", t):
+        mechanics += 1
+    if re.search(r"\b(?:cashback|cash back|free bet|free spins|bonus|reward)\b", t):
+        mechanics += 1
+    if re.search(r"\b(?:claim|eligible|valid for|validity|qualify)\b", t):
+        mechanics += 1
+    if re.search(r"\b(?:minimum|min)\s+deposit\b", t):
+        mechanics += 1
+
+    if title_signal:
+        return True, "promotion title"
+
+    if mechanics >= 3 and re.search(r"\b(?:offer|bonus|promotion|promo|reward|deposit|cashback)\b", t):
+        return True, "multiple promotion mechanics"
+
+    return False, "insufficient promotion evidence"
+
+def classify(title, body):
+    h = norm(title).lower()
+    t = norm(f"{title} {body}").lower()
+
     if any(x in h for x in ["cashback", "cash back", "cash-back"]):
         return "cashback"
     if any(x in h for x in ["free bet", "freebet", "free-bet"]):
@@ -104,9 +173,9 @@ def classify(title, body):
         return "racing_bonus"
     if any(x in h for x in ["reload", "re-deposit", "redeposit"]):
         return "reload_bonus"
-    if any(x in h for x in ["welcome", "new customer", "new user", "first deposit", "first-deposit", "registration"]):
+    if any(x in h for x in ["welcome", "new customer", "new user", "first deposit", "first-deposit", "registration bonus"]):
         return "new_customer"
-    if "deposit" in h:
+    if "deposit bonus" in h or ("deposit" in h and "bonus" in h):
         return "deposit_bonus"
 
     if any(x in t for x in ["cashback", "cash back", "cash-back"]):
@@ -115,11 +184,11 @@ def classify(title, body):
         return "free_bet"
     if any(x in t for x in ["reload", "re-deposit", "redeposit"]):
         return "reload_bonus"
-    if any(x in t for x in ["welcome", "new customer", "new user", "first deposit", "first-deposit", "registration"]):
+    if any(x in t for x in ["welcome", "new customer", "new user", "first deposit", "first-deposit", "registration bonus"]):
         return "new_customer"
     if any(x in t for x in ["racing bonus", "horse racing", "turf"]):
         return "racing_bonus"
-    if "deposit" in t:
+    if "deposit" in t and "bonus" in t:
         return "deposit_bonus"
     if any(x in t for x in ["cricket", "football", "soccer", "tennis", "rugby", "basketball", "badminton", "formula 1", "f1"]):
         return "sports_bonus"
@@ -183,59 +252,26 @@ def parse_sections(markdown):
     if title and buf:
         sections.append((title, " ".join(buf)))
 
-    # Some modern sites render promotion cards without markdown headings.
-    # If heading extraction produced little data, create bounded candidates
-    # around lines that look like promotion titles.
-    if len(sections) <= 1 and markdown:
-        candidates = []
+    # Promotion cards on modern pages often have no markdown headings.
+    # Only promote lines that look like actual offer names; generic page
+    # content is deliberately not converted into promotions.
+    if len(sections) <= 1:
         raw = [norm(x) for x in lines if norm(x)]
         for i, line in enumerate(raw):
-            if not re.search(
-                r"bonus|cashback|free bet|freebet|promotion|offer|reward|deposit|welcome|reload",
-                line, re.I
-            ):
+            if not has_promo_title(line):
                 continue
+            body = " ".join(raw[i:i + 16])
+            sections.append((line[:180], body[:3500]))
 
-            title = re.sub(r"^[•*\\-]+\\s*", "", line).strip()
-            if len(title) < 4 or len(title) > 180:
-                continue
-
-            low = title.lower()
-            if low.startswith((
-                "the bonus", "this bonus", "bonus will", "bonus must",
-                "promotion is", "this promotion", "users must",
-                "players must", "wagering requirement"
-            )):
-                continue
-
-            body = " ".join(raw[i:i + 18])
-            candidates.append((title[:180], body[:3500]))
-
-        if candidates:
-            sections.extend(candidates)
-
-    # Last-resort page-level extraction. This prevents a successful scrape
-    # from becoming zero offers simply because the site has no headings.
-    if not sections and markdown and re.search(
-        r"bonus|cashback|free bet|freebet|promotion|offer|deposit|reward|welcome|reload",
-        markdown, re.I
-    ):
-        raw = [norm(x) for x in lines if norm(x)]
-        if raw:
-            sections.append((raw[0][:180], " ".join(raw[:35])[:5000]))
-
-    # Remove obvious navigation/footer noise and duplicate candidates.
     out = []
     seen = set()
     for title, body in sections:
         title = norm(title)
         body = norm(body)
-        key = (title.lower(), body[:300].lower())
-        if not title or key in seen:
+        if not title or len(title) < 3 or len(title) > 180:
             continue
-        if len(title) < 3:
-            continue
-        if title.lower() in {"promotions", "promotion", "bonuses", "bonus", "terms and conditions"} and len(body) < 100:
+        key = (title.lower(), body[:400].lower())
+        if key in seen:
             continue
         seen.add(key)
         out.append((title, body))
@@ -243,59 +279,54 @@ def parse_sections(markdown):
 
 def extract(platform, url, markdown):
     rows = []
+    rejected = 0
 
     for title, body in parse_sections(markdown):
-        text = norm(f"{title} {body}")
-
-        if not re.search(
-            r"bonus|cashback|free bet|freebet|promotion|offer|deposit|reward|wager|welcome|reload",
-            text,
-            re.I,
-        ):
+        is_promo, reason = promotion_evidence(title, body)
+        if not is_promo:
+            rejected += 1
             continue
+
+        text = norm(f"{title} {body}")
 
         bonus_pct = num(text, [
             r"(\d{1,3})\s*%\s*(?:deposit\s*)?(?:match\s*)?bonus",
             r"(\d{1,3})\s*%\s*(?:up to|max)",
             r"bonus[^%]{0,60}(\d{1,3})\s*%",
         ])
-
         max_bonus = num(text, [
             r"(?:up to|max(?:imum)?(?:\s+bonus)?)[^\d]{0,30}(?:lkr|rs\.?)[\s:]*([\d\s,]+)",
             r"(?:lkr|rs\.?)\s*([\d\s,]+)[^\d]{0,40}(?:max(?:imum)?|up to)",
             r"up to\s*([\d\s,]+)\s*(?:lkr|rs\.?)",
         ])
-
         min_deposit = num(text, [
             r"(?:minimum|min)\s+deposit[^\d]{0,30}(?:lkr|rs\.?)?\s*([\d\s,]+)",
             r"deposit\s+(?:of\s+)?(?:lkr|rs\.?)\s*([\d\s,]+)",
             r"deposit\s+([\d\s,]+)\s*(?:lkr|rs\.?)",
         ])
-
         wagering = num(text, [
             r"(\d+(?:\.\d+)?)\s*x\s*(?:wager|rollover|turnover)",
             r"(?:wagering|rollover|turnover)[^\d]{0,30}(\d+(?:\.\d+)?)\s*x",
         ])
-
         odds = num(text, [
             r"(?:minimum|min)\s+odds[^\d]{0,20}(\d+(?:\.\d+)?)",
             r"odds[^\d]{0,10}(\d+(?:\.\d+)?)",
         ])
-
         validity_days = num(text, [
             r"(\d+)\s*(?:days|day)",
             r"valid[^\d]{0,20}(\d+)\s*(?:days|day)",
         ])
-
         cash_conversion = num(text, [
             r"(?:cash conversion|max(?:imum)? cash conversion)[^\d]{0,20}(\d+(?:\.\d+)?)\s*x",
         ])
 
         category = classify(title, body)
         customer = customer_type(title, body, category)
+        host = urlparse(url).netloc.lower()
+        source_type = NON_OFFICIAL_HOSTS.get(host, "official/public")
 
         rows.append({
-            "id": hashlib.sha1(f"{platform}|{title}|{url}".encode()).hexdigest()[:12],
+            "id": hashlib.sha1(f"{platform}|{norm(title).lower()}".encode()).hexdigest()[:12],
             "platform": platform,
             "title": title,
             "category": category,
@@ -309,14 +340,16 @@ def extract(platform, url, markdown):
             "cash_conversion_x": cash_conversion,
             "validity_days": validity_days,
             "source_url": url,
+            "source_type": source_type,
             "source_text": body[:2500],
+            "quality_status": "validated",
+            "quality_reason": reason,
         })
 
-    return rows
+    return rows, rejected
 
 def score(r):
     parts = []
-
     if r["bonus_percent"] is not None:
         parts.append(min(r["bonus_percent"] / 100, 1) * 20)
     if r["max_bonus_lkr"] is not None:
@@ -329,32 +362,24 @@ def score(r):
         parts.append(max(0, 1 - r["min_odds"] / 5) * 10)
     if r["validity_days"] is not None:
         parts.append(min(r["validity_days"] / 30, 1) * 5)
-
     return round(sum(parts), 1)
 
 def discovered_links(source_url, links):
     source_host = urlparse(source_url).netloc.lower()
     out = []
-
     for link in links:
         if not isinstance(link, str) or not link.startswith(("http://", "https://")):
             continue
-
         parsed = urlparse(link)
         if parsed.netloc.lower() != source_host:
             continue
-
         path = (parsed.path + "?" + parsed.query).lower()
         if not any(word in path for word in PROMO_LINK_WORDS):
             continue
-
         if link.rstrip("/") == source_url.rstrip("/"):
             continue
-
         out.append(link)
-
-    # Preserve order and cap crawling so one source cannot explode the run.
-    return list(dict.fromkeys(out))[:20]
+    return list(dict.fromkeys(out))[:8]
 
 def main():
     cfg = json.loads((ROOT / "config/platforms.json").read_text())
@@ -362,32 +387,38 @@ def main():
 
     all_rows = []
     errors = []
+    rejected_count = 0
+    source_stats = []
 
     for p in cfg["platforms"]:
         visited = set()
         queue = list(p["urls"])
+        pages_checked = 0
+        platform_rows = []
 
-        while queue:
+        while queue and pages_checked < MAX_PAGES_PER_PLATFORM:
             url = queue.pop(0)
             if url in visited:
                 continue
             visited.add(url)
+            pages_checked += 1
 
             try:
                 md, links, method = fetch_page(url)
                 if not md:
-                    raise RuntimeError("Firecrawl returned no markdown")
+                    raise RuntimeError("Scraper returned no page text")
 
-                rows = extract(p["name"], url, md)
+                rows, rejected = extract(p["name"], url, md)
+                rejected_count += rejected
+
                 for r in rows:
                     r["last_checked"] = now
                     r["scrape_method"] = method
                     r["score"] = score(r)
-                all_rows.extend(rows)
+                    platform_rows.append(r)
 
-                # Discover individual promotion/bonus detail pages.
                 for link in discovered_links(url, links):
-                    if link not in visited:
+                    if link not in visited and link not in queue:
                         queue.append(link)
 
             except Exception as e:
@@ -397,18 +428,26 @@ def main():
                     "error": str(e),
                 })
 
-    # Deduplicate within a run.
-    dedup = {r["id"]: r for r in all_rows}
-    all_rows = list(dedup.values())
+        # De-duplicate repeated copies of the same offer across source pages.
+        dedup = {}
+        for r in platform_rows:
+            key = (r["platform"], norm(r["title"]).lower())
+            existing = dedup.get(key)
+            if existing is None or len(r["source_text"]) > len(existing["source_text"]):
+                dedup[key] = r
 
-    # Comparable cluster = promotion type + customer segment + sport.
-    # This prevents, for example, a cashback offer being compared with a
-    # first-deposit bonus just because both apply to cricket.
+        platform_rows = list(dedup.values())
+        all_rows.extend(platform_rows)
+        source_stats.append({
+            "platform": p["name"],
+            "pages_checked": pages_checked,
+            "offers_found": len(platform_rows),
+            "errors": sum(1 for e in errors if e["platform"] == p["name"]),
+        })
+
     for r in all_rows:
         r["cluster_key"] = "|".join([
-            r["category"],
-            r["customer_type"],
-            r["sport"],
+            r["category"], r["customer_type"], r["sport"],
         ])
         r["cluster_label"] = " · ".join([
             r["category"].replace("_", " ").title(),
@@ -424,6 +463,12 @@ def main():
             "updated_at": now,
             "promotions": all_rows,
             "errors": errors,
+            "source_stats": source_stats,
+            "rejected_count": rejected_count,
+            "quality": {
+                "validated_only": True,
+                "promotion_rule": "Offer must have a promotional title or multiple explicit promotion mechanics.",
+            },
         }, indent=2),
         encoding="utf-8",
     )
@@ -433,14 +478,16 @@ def main():
     history.append({
         "timestamp": now,
         "count": len(all_rows),
+        "rejected_count": rejected_count,
         "promotions": all_rows,
     })
     history = history[-60:]
     history_path.write_text(json.dumps(history, indent=2), encoding="utf-8")
 
     print(
-        f"Collected {len(all_rows)} promotions from "
-        f"{len(cfg['platforms'])} platforms; {len(errors)} source errors."
+        f"Collected {len(all_rows)} validated promotions from "
+        f"{len(cfg['platforms'])} platforms; {len(errors)} source errors; "
+        f"{rejected_count} low-confidence candidates excluded."
     )
 
 if __name__ == "__main__":

@@ -1,21 +1,10 @@
-name: Scrape Promotions
+name: Scrape Promotions (manual)
 
 on:
   workflow_dispatch:
-  push:
-    paths:
-      - "scraper/**"
-      - "config/**"
-      - ".github/workflows/scrape.yml"
-  schedule:
-    - cron: "15 */6 * * *"
 
 permissions:
   contents: write
-
-concurrency:
-  group: scrape-promotions
-  cancel-in-progress: true
 
 jobs:
   scrape:
@@ -38,7 +27,7 @@ jobs:
           FIRECRAWL_API_KEY: ${{ secrets.FIRECRAWL_API_KEY }}
         run: python scraper/run.py
 
-      - name: Commit updated data
+      - name: Commit refreshed promotion data
         run: |
           git config user.name "promotion-tracker[bot]"
           git config user.email "promotion-tracker[bot]@users.noreply.github.com"
@@ -46,8 +35,7 @@ jobs:
           if git diff --cached --quiet; then
             echo "No data changes."
           else
-            git pull --rebase origin main
-            git add data/
             git commit -m "Update promotion data"
+            git pull --rebase origin main
             git push
           fi

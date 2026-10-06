@@ -13,11 +13,17 @@ on:
 permissions:
   contents: write
 
+concurrency:
+  group: scrape-promotions
+  cancel-in-progress: true
+
 jobs:
   scrape:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -40,6 +46,8 @@ jobs:
           if git diff --cached --quiet; then
             echo "No data changes."
           else
+            git pull --rebase origin main
+            git add data/
             git commit -m "Update promotion data"
             git push
           fi

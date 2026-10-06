@@ -9,6 +9,7 @@ from bs4 import BeautifulSoup
 ROOT = Path(__file__).resolve().parents[1]
 API = "https://api.firecrawl.dev/v2/scrape"
 MAX_PAGES_PER_PLATFORM = 12
+MAX_OFFERS_PER_PLATFORM = 30
 
 PROMO_LINK_WORDS = (
     "promo", "promotion", "promotions", "bonus", "bonuses", "cashback",
@@ -120,9 +121,17 @@ def num(text, patterns):
                 pass
     return None
 
+REJECT_TITLE_WORDS = (
+    "terms", "conditions", "rules", "faq", "guide", "information",
+    "details", "how to", "learn", "code", "what is", "eligibility",
+    "requirements", "claim instructions"
+)
+
 def has_promo_title(title):
     h = norm(title).lower()
     if not h or h in GENERIC_TITLES:
+        return False
+    if any(word in h for word in REJECT_TITLE_WORDS):
         return False
     return any(word in h for word in PROMO_TITLE_WORDS)
 
@@ -133,10 +142,9 @@ def promotion_evidence(title, body):
     if h in GENERIC_TITLES:
         return False, "generic page title"
 
-    if any(re.search(p, h) for p in NON_PROMO_PATTERNS) and not has_promo_title(h):
-        return False, "non-promotion page title"
+    if any(word in h for word in REJECT_TITLE_WORDS):
+        return False, "informational/terms title"
 
-    title_signal = has_promo_title(h)
     mechanics = 0
     if re.search(r"\b\d{1,3}\s*%\b", t):
         mechanics += 1
@@ -153,8 +161,20 @@ def promotion_evidence(title, body):
     if re.search(r"\b(?:minimum|min)\s+deposit\b", t):
         mechanics += 1
 
-    if title_signal:
-        return True, "promotion title"
+    # A title by itself is not enough unless it clearly names an offer.
+    clear_offer_title = (
+        bool(re.search(r"\b\d{1,3}\s*%\b", h))
+        or bool(re.search(r"\b(?:lkr|rs\.?)\s*[\d,]+\b", h))
+        or any(word in h for word in (
+            "cashback", "free bet", "freebet", "welcome bonus",
+            "deposit bonus", "reload", "daily bonus", "weekly bonus",
+            "special offer", "registration bonus", "first deposit",
+            "tuesday bonus", "friday bonus"
+        ))
+    )
+
+    if clear_offer_title:
+        return True, "clear offer title"
 
     if mechanics >= 3 and re.search(r"\b(?:offer|bonus|promotion|promo|reward|deposit|cashback)\b", t):
         return True, "multiple promotion mechanics"
@@ -436,7 +456,11 @@ def main():
             if existing is None or len(r["source_text"]) > len(existing["source_text"]):
                 dedup[key] = r
 
-        platform_rows = list(dedup.values())
+        platform_rows = sorted(
+            dedup.values(),
+            key=lambda r: r["score"],
+            reverse=True,
+        )[:MAX_OFFERS_PER_PLATFORM]
         all_rows.extend(platform_rows)
         source_stats.append({
             "platform": p["name"],

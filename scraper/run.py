@@ -4,6 +4,7 @@ from pathlib import Path
 from urllib.parse import urlparse
 
 import requests
+from bs4 import BeautifulSoup
 
 ROOT = Path(__file__).resolve().parents[1]
 API = "https://api.firecrawl.dev/v2/scrape"
@@ -35,6 +36,46 @@ def firecrawl(url):
     r.raise_for_status()
     data = r.json().get("data", {})
     return data.get("markdown", "") or "", data.get("links", []) or []
+
+def direct_fallback(url):
+    """Fetch a public page directly when Firecrawl is unavailable/rate-limited."""
+    r = requests.get(
+        url,
+        headers={
+            "User-Agent": "Mozilla/5.0 (compatible; PromotionTracker/1.0)",
+            "Accept": "text/html,application/xhtml+xml",
+        },
+        timeout=45,
+    )
+    r.raise_for_status()
+
+    soup = BeautifulSoup(r.text, "html.parser")
+    for tag in soup(["script", "style", "noscript", "svg"]):
+        tag.decompose()
+
+    links = []
+    host = urlparse(url).netloc.lower()
+    for a in soup.find_all("a", href=True):
+        href = a["href"]
+        if href.startswith(("http://", "https://")) and urlparse(href).netloc.lower() == host:
+            links.append(href)
+
+    text = soup.get_text("\n", strip=True)
+    return text, list(dict.fromkeys(links))
+
+def fetch_page(url):
+    try:
+        return (*firecrawl(url), "firecrawl")
+    except Exception as firecrawl_error:
+        try:
+            md, links = direct_fallback(url)
+            if md:
+                return md, links, "direct"
+        except Exception as direct_error:
+            raise RuntimeError(
+                f"Firecrawl failed: {firecrawl_error}; direct fallback failed: {direct_error}"
+            )
+        raise RuntimeError(f"Firecrawl failed: {firecrawl_error}")
 
 def norm(text):
     return re.sub(r"\s+", " ", text or "").strip()
@@ -333,13 +374,14 @@ def main():
             visited.add(url)
 
             try:
-                md, links = firecrawl(url)
+                md, links, method = fetch_page(url)
                 if not md:
                     raise RuntimeError("Firecrawl returned no markdown")
 
                 rows = extract(p["name"], url, md)
                 for r in rows:
                     r["last_checked"] = now
+                    r["scrape_method"] = method
                     r["score"] = score(r)
                 all_rows.extend(rows)
 
